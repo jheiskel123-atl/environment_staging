@@ -1,0 +1,64 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: jheiskel123-atl
+  labels:
+    net.beedemo.deploy.type: workshop
+spec:
+  ports:
+  - port: 80
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  selector:
+    app: jheiskel123-atl
+---
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: jheiskel123-atl-staging
+  labels:
+    net.beedemo.deploy.type: workshop
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: jheiskel123-atl
+      labels:
+        net.beedemo.deploy.type: workshop
+        app: jheiskel123-atl
+        env: staging
+    spec:
+      serviceAccountName: cjoc
+      containers:
+      - name: jheiskel123-atl
+        image: gcr.io/core-workshop/helloworld-nodejs:jheiskel123-atl-1
+        resources:
+          requests:
+            memory: "100Mi"
+            cpu: "50m"
+        imagePullPolicy: Always
+        ports:
+        - name: public
+          containerPort: 8080
+      securityContext:
+        runAsUser: 1000
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: jheiskel123-atl
+  labels:
+    net.beedemo.deploy.type: workshop
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /jheiskel123-atl/?(.*)
+        backend:
+          serviceName: jheiskel123-atl
+          servicePort: 80
+    host: staging.cb-sa.io
